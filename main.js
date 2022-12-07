@@ -34,7 +34,7 @@ function rotateCube()
     cube.rotation.z += deltaRotation;
 
     let y_limit = 2.8;
-    let x_limit = 6;
+    let x_limit = 6.2;
     let deltaPosition = 0.05;
     if (up)
     {
