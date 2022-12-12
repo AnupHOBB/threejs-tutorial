@@ -1,85 +1,81 @@
-'use strict';
+import * as GLTF from 'gltfLoader'
+import * as THREE from 'three'
 
-const fov = 75;
-const aspect = 2;
-const near = 0.1;
-const far = 5;
-const camera = new THREE.PerspectiveCamera(fov, aspect, near, far);
-camera.position.z = 5;
+const modelUrl = 'https://modelviewer.dev/shared-assets/models/NeilArmstrong.glb'
+const loader = new GLTF.GLTFLoader()
+loader.load(modelUrl, (gltfModel)=>onModelLoad(gltfModel.scene), (xhr)=>{}, (error)=>console.log(error))
 
-const boxWidth = 1;
-const boxHeight = 1;
-const boxDepth = 1;
-const geometry = new THREE.BoxGeometry(boxWidth, boxHeight, boxDepth);
+let model
+let canvas
+let isMousePressed = false
+let lastPos
+let first = true
 
-const material = new THREE.MeshBasicMaterial({color : 0x44aa88});
+let renderer
+let scene
+let camera
 
-const cube = new THREE.Mesh(geometry, material);
-
-const scene = new THREE.Scene();
-scene.add(cube);
-
-const renderer = new THREE.WebGLRenderer();
-document.body.appendChild( renderer.domElement );
-
-let up = true;
-let right = true;
-function rotateCube()
+function onModelLoad(gltfModel)
 {
-    requestAnimationFrame(rotateCube);
+    const fov = 75
+    const aspect = 2
+    const near = 0.1
+    const far = 5
+    camera = new THREE.PerspectiveCamera(fov, aspect, near, far)
 
-    let deltaRotation = 0.01;
-    cube.rotation.x += deltaRotation;
-    cube.rotation.y += deltaRotation;
-    cube.rotation.z += deltaRotation;
+    model = gltfModel.children[0]
+    model.position.set(0, -1, -2)
 
-    let y_limit = 2.8;
-    let x_limit = 6.2;
-    let deltaPosition = 0.05;
-    if (up)
-    {
-        if(cube.position.y > y_limit)
-        {
-            cube.position.y -= deltaPosition;
-            up = false;
-        }
-        else
-            cube.position.y += deltaPosition;
-    }
-    else
-    {
-        if (cube.position.y < -y_limit)
-        {
-            cube.position.y += deltaPosition;
-            up = true;
-        }
-        else
-            cube.position.y -= deltaPosition;
-    }
+    const light = new THREE.DirectionalLight({color : 0x44aa88}, 1.5)
+    light.position.set(0, 0, 5)
 
-    if (right)
-    {
-        if(cube.position.x > x_limit)
-        {
-            cube.position.x -= deltaPosition;
-            right = false;
-        }
-        else
-            cube.position.x += deltaPosition;
-    }
-    else
-    {
-        if (cube.position.x < -x_limit)
-        {
-            cube.position.x += deltaPosition;
-            right = true;
-        }
-        else
-            cube.position.x -= deltaPosition;
-    }
+    scene = new THREE.Scene()
+    scene.add(model)
+    scene.add(light)
 
-    renderer.setSize( window.innerWidth, window.innerHeight );
-    renderer.render(scene, camera);
+    renderer = new THREE.WebGLRenderer()
+    canvas = renderer.domElement
+    canvas.addEventListener('mousedown', onDrag)
+    canvas.addEventListener('mouseup', onRelease)
+    canvas.addEventListener('mousemove', onMove)
+    document.body.appendChild( renderer.domElement )
+
+    document.querySelector("body").onresize = () => renderer.setSize(window.innerWidth, window.innerHeight)
+
+    renderer.setSize( window.innerWidth, window.innerHeight )
+    renderer.render(scene, camera)
 }
 
-rotateCube();
+function onDrag(event)
+{
+    isMousePressed = true
+}
+
+function onRelease()
+{
+    isMousePressed = false
+    first = true
+}
+
+function onMove(event)
+{
+    if (isMousePressed)
+    {
+        if (first) 
+        {
+            lastPos = { x: event.clientX, y: event.clientY }
+            first = false
+        }
+        rotate(event)
+        renderer.render(scene, camera)
+    }
+}
+
+function rotate(event)
+{
+    let currentPos = { x: event.clientX, y: event.clientY }
+    let yaw = currentPos.x - lastPos.x
+    yaw *= 0.1
+    model.rotation.y += yaw
+    lastPos = currentPos
+}

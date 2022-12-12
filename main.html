@@ -1,6 +1,14 @@
 <html>
-    <body>
-        <script src="three.js"></script>
-        <script src="main.js"></script>
-    </body>
+    <head>
+        <script type="importmap">
+			{
+				"imports": {
+					"three": "/node_modules/three/src/Three.js",
+					"gltfLoader": "/node_modules/three/examples/jsm/loaders/GLTFLoader.js"
+				}
+			}
+		</script>
+        <script type="module" src="http://127.0.0.1:5500/main.js"></script>
+    </head>
+    <body></body>
 </html>
