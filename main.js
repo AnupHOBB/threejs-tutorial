@@ -10,14 +10,19 @@ const NEAR_PLANE = 0.1
 const FAR_PLANE = 5
 const ROTATE_SENSITIVITY = 0.1
 
+let axis = new Vector3(0, -1, 0)
+axis.applyAxisAngle(new Vector3(0, 0, -1), toRadians(20))
+let angle = toRadians(1)
+
 let lastPos
 let isMousePressed = false
 let dblclickCount = 0
+let lastY = 0
 
-let houseTexture = new THREE.TextureLoader().load("sample-texture.jpg")
-houseTexture.wrapS = THREE.ClampToEdgeWrapping
-houseTexture.wrapT = THREE.ClampToEdgeWrapping
-houseTexture.repeat.set(1, 1)
+let texture = new THREE.TextureLoader().load("sample-texture.jpg")
+texture.wrapS = THREE.ClampToEdgeWrapping
+texture.wrapT = THREE.ClampToEdgeWrapping
+texture.repeat.set(1, 1)
 
 let model
 let ogTextures = []
@@ -99,21 +104,13 @@ function rotate(event)
 function changeColor(change)
 {
     if (change)
-    {
-        model.children.forEach(mesh => { 
-            mesh.material.map = houseTexture
-        })
-    }
+        model.children.forEach(mesh => { mesh.material.map = texture })
     else
     {
         for(let i=0; i<ogTextures.length; i++)
             model.children[i].material.map = ogTextures[i] 
     }
 }
-
-let axis = new Vector3(0, -1, 0)
-axis.applyAxisAngle(new Vector3(0, 0, -1), toRadians(20))
-let angle = toRadians(1)
 
 function moveToTarget(object3D, targetPosition, lookAtPosition)
 { 
@@ -143,7 +140,11 @@ function orbitAroundTarget(object3D, lookAtPosition)
     let offset = subtractVectors(vector2NewPos, vector2OldPos)
     let newPosition = addVectors(object3D.position, offset)
     object3D.position.set(newPosition.x, newPosition.y, newPosition.z)
-    object3D.rotateOnAxis(axis, angle)
+    let yaw = angleInRadians(new Vector3(vector2NewPos.x, 0, vector2NewPos.z), new Vector3(vector2OldPos.x, 0, vector2OldPos.z))
+    let pitch = angleInRadians(vector2NewPos, vector2OldPos)
+    object3D.rotation.y -= yaw
+    object3D.rotation.x -= (lastY < object3D.position.y) ? pitch : -pitch
+    lastY = object3D.position.y
     setTimeout(() => orbitAroundTarget(object3D, lookAtPosition), 1000/FRAME_RATE)
 }
 
@@ -159,8 +160,13 @@ function subtractVectors(v1, v2)
 
 function normalize(v)
 {
-    let len = Math.sqrt((v.x * v.x)+(v.y * v.y)+(v.z * v.z))
+    let len = length(v)
     return new Vector3(v.x/len, v.y/len, v.z/len)
+}
+
+function length(v)
+{
+    return Math.sqrt((v.x * v.x)+(v.y * v.y)+(v.z * v.z))
 }
 
 function angleInRadians(v1, v2)
