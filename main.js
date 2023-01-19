@@ -1,6 +1,7 @@
 import * as THREE from 'three'
 import { GLTFLoader } from 'gltfLoader'
 import { Vector3 } from 'three'
+import { OrbitControls } from 'orbit'
 
 const FRAME_RATE = 60
 const MODEL_URL = 'https://modelviewer.dev/shared-assets/models/NeilArmstrong.glb'
@@ -12,12 +13,10 @@ const ROTATE_SENSITIVITY = 0.1
 
 let axis = new Vector3(0, -1, 0)
 axis.applyAxisAngle(new Vector3(0, 0, -1), toRadians(20))
-let angle = toRadians(1)
 
 let lastPos
 let isMousePressed = false
 let dblclickCount = 0
-let lastY = 0
 
 let texture = new THREE.TextureLoader().load("sample-texture.jpg")
 texture.wrapS = THREE.ClampToEdgeWrapping
@@ -43,6 +42,11 @@ renderer.domElement.addEventListener('mouseup', onRelease)
 renderer.domElement.addEventListener('mousemove', onMove)
 renderer.domElement.addEventListener('dblclick', onDoubleClick)
 document.body.appendChild( renderer.domElement )
+
+const targetLocation = new THREE.Vector3(0, 0, -2)
+
+const controls = new OrbitControls(camera, renderer.domElement)
+controls.target = targetLocation
 
 runRenderLoop(renderer, scene, camera)
 
@@ -75,8 +79,10 @@ function onMove(event)
 function onDoubleClick()
 {
     if (dblclickCount == 0)
-        orbitAroundTarget(camera, model.position)    
+    {
+        orbitAroundTarget(camera, targetLocation)
         //moveToTarget(camera, { x:-2, y:2, z:-2 }, model.position)
+    }
     else
         resetCamera()
     dblclickCount++
@@ -88,6 +94,7 @@ function runRenderLoop(renderer, scene, camera)
 {
     renderer.setSize( window.innerWidth, window.innerHeight )
     renderer.render(scene, camera)
+    controls.update()
     setTimeout(()=>runRenderLoop(renderer, scene, camera), 1000/FRAME_RATE)
 }
 
@@ -132,19 +139,14 @@ function moveToTarget(object3D, targetPosition, lookAtPosition)
     }
 }
 
-function orbitAroundTarget(object3D, lookAtPosition)
+function orbitAroundTarget(/**@type {THREE.Camera} */object3D, lookAtPosition)
 {
     let vector2OldPos = subtractVectors(object3D.position, lookAtPosition)
     let vector2NewPos = new Vector3(vector2OldPos.x, vector2OldPos.y, vector2OldPos.z)
-    vector2NewPos.applyAxisAngle(axis, angle)
+    vector2NewPos.applyAxisAngle(axis, toRadians(1))
     let offset = subtractVectors(vector2NewPos, vector2OldPos)
     let newPosition = addVectors(object3D.position, offset)
     object3D.position.set(newPosition.x, newPosition.y, newPosition.z)
-    let yaw = angleInRadians(new Vector3(vector2NewPos.x, 0, vector2NewPos.z), new Vector3(vector2OldPos.x, 0, vector2OldPos.z))
-    let pitch = angleInRadians(vector2NewPos, vector2OldPos)
-    object3D.rotation.y -= yaw
-    object3D.rotation.x -= (lastY < object3D.position.y) ? pitch : -pitch
-    lastY = object3D.position.y
     setTimeout(() => orbitAroundTarget(object3D, lookAtPosition), 1000/FRAME_RATE)
 }
 
@@ -191,6 +193,11 @@ function resetCamera()
 function toRadians(degrees)
 {
     return (degrees * 22) / (7 * 180)
+}
+
+function toDegrees(radians)
+{
+    return (radians * 7 * 180)/22
 }
 
 function isVector3Equal(v1, v2)
