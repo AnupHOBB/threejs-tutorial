@@ -1,7 +1,6 @@
 import * as THREE from 'three'
 import { GLTFLoader } from 'gltfLoader'
 import { Vector3 } from 'three'
-import { OrbitControls } from 'orbit'
 
 const FRAME_RATE = 60
 const MODEL_URL = 'https://modelviewer.dev/shared-assets/models/NeilArmstrong.glb'
@@ -44,9 +43,6 @@ renderer.domElement.addEventListener('dblclick', onDoubleClick)
 document.body.appendChild( renderer.domElement )
 
 const targetLocation = new THREE.Vector3(0, 0, -2)
-
-const controls = new OrbitControls(camera, renderer.domElement)
-controls.target = targetLocation
 
 runRenderLoop(renderer, scene, camera)
 
@@ -94,7 +90,6 @@ function runRenderLoop(renderer, scene, camera)
 {
     renderer.setSize( window.innerWidth, window.innerHeight )
     renderer.render(scene, camera)
-    controls.update()
     setTimeout(()=>runRenderLoop(renderer, scene, camera), 1000/FRAME_RATE)
 }
 
@@ -139,7 +134,7 @@ function moveToTarget(object3D, targetPosition, lookAtPosition)
     }
 }
 
-function orbitAroundTarget(/**@type {THREE.Camera} */object3D, lookAtPosition)
+function orbitAroundTarget(object3D, lookAtPosition)
 {
     let vector2OldPos = subtractVectors(object3D.position, lookAtPosition)
     let vector2NewPos = new Vector3(vector2OldPos.x, vector2OldPos.y, vector2OldPos.z)
@@ -147,6 +142,7 @@ function orbitAroundTarget(/**@type {THREE.Camera} */object3D, lookAtPosition)
     let offset = subtractVectors(vector2NewPos, vector2OldPos)
     let newPosition = addVectors(object3D.position, offset)
     object3D.position.set(newPosition.x, newPosition.y, newPosition.z)
+    object3D.lookAt(lookAtPosition)
     setTimeout(() => orbitAroundTarget(object3D, lookAtPosition), 1000/FRAME_RATE)
 }
 
